@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # <bitbar.title>Display Conda Virtual Environments</bitbar.title>
@@ -7,7 +7,7 @@
 # <bitbar.author.github>jhrcook</bitbar.author.github>
 # <bitbar.desc>List the conda virtual environments and copy to clipboard when clicked..</bitbar.desc>
 # <bitbar.image>https://docs.conda.io/en/latest/_images/conda_logo.svg</bitbar.image>
-# <bitbar.dependencies>python</bitbar.dependencies>
+# <bitbar.dependencies>python3</bitbar.dependencies>
 # <swiftbar.hideAbout>true</swiftbar.hideAbout>
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
@@ -19,15 +19,15 @@ import sys
 
 self_path = Path(sys.argv[0])
 
-
 def print_environments():
     """Print the environments to standard output."""
-    print("🐍 | emojize=true")
+    
+    print("🅒")  # print("🐍 | emojize=true")
 
     print("---")
 
     print("Click to copy to clipboard")
-
+    
     conda_envs = subprocess.run(["conda", "env", "list"], stdout=subprocess.PIPE)
     conda_envs = conda_envs.stdout.decode("utf-8")
     conda_envs = conda_envs.split("\n")
