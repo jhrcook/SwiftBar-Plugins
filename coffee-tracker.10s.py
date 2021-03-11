@@ -1,9 +1,9 @@
 #!//Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
-from typing import Any, Dict, List
+import argparse
+from typing import Any, Dict, List, Optional
 
 import requests
-from requests.exceptions import HTTPError
 
 api_url = "https://a7a9ck.deta.dev/"
 
@@ -33,6 +33,16 @@ def get_active_coffee_bags() -> List[Dict[str, Any]]:
         raise Exception(response.status_code)
 
 
+def make_click_command(bag: CoffeeBag) -> str:
+    cmd = "refresh=true "
+    cmd += f"param0={bag.brand + ': ' + bag.name}"
+    return cmd
+
+
+def put_coffee_use(bag_id: str):
+    print("make request for '" + bag_id + "'")
+
+
 def swiftbar_plugin():
     print(":drop.fill: | sfcolor=#764636 ansi=false emojize=false symbolize=true")
     print("---")
@@ -40,14 +50,23 @@ def swiftbar_plugin():
     coffee_bags = get_active_coffee_bags()
     for info in coffee_bags:
         coffee_bag = CoffeeBag(brand=info["brand"], name=info["name"])
-        print(coffee_bag)
+        click_cmd = make_click_command(coffee_bag)
+        print(coffee_bag.__str__() + " | " + click_cmd)
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("bag_id", type=str, default=None, nargs="?")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-
+    args = parse_arguments()
+    if args.bag_id is None:
+        swiftbar_plugin()
+    else:
+        put_coffee_use(args.bag_id)
     # Argument parsing:
     # no arguments: the plugin is just running
     # one argument: the coffee button that was selected
     # Use the arguments to either run `swiftbar_plugin()` or `coffee_selected()`.
-
-    swiftbar_plugin()
