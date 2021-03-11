@@ -1,7 +1,7 @@
 #!//Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
 import argparse
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 
@@ -11,10 +11,12 @@ api_url = "https://a7a9ck.deta.dev/"
 class CoffeeBag:
     brand: str
     name: str
+    key: str
 
-    def __init__(self, brand: str, name: str):
+    def __init__(self, brand, name, key, **info):
         self.brand = brand
         self.name = name
+        self.key = key
 
     def __str__(self) -> str:
         return self.brand + " - " + self.name
@@ -35,7 +37,7 @@ def get_active_coffee_bags() -> List[Dict[str, Any]]:
 
 def make_click_command(bag: CoffeeBag) -> str:
     cmd = "refresh=true "
-    cmd += f"param0={bag.brand + ': ' + bag.name}"
+    cmd += f"param0={bag.key}"
     return cmd
 
 
@@ -49,7 +51,7 @@ def swiftbar_plugin():
 
     coffee_bags = get_active_coffee_bags()
     for info in coffee_bags:
-        coffee_bag = CoffeeBag(brand=info["brand"], name=info["name"])
+        coffee_bag = CoffeeBag(**info)
         click_cmd = make_click_command(coffee_bag)
         print(coffee_bag.__str__() + " | " + click_cmd)
 
