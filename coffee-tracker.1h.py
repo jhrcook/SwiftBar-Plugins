@@ -1,5 +1,14 @@
 #!//Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
+# <bitbar.title>Coffee Tracker Plugin</bitbar.title>
+# <bitbar.version>v1.0</bitbar.version>
+# <bitbar.author>Joshua Cook</bitbar.author>
+# <bitbar.author.github>jhrcook</bitbar.author.github>
+# <bitbar.desc>Easy logging of cups of coffee.</bitbar.desc>
+# <bitbar.dependencies>python3</bitbar.dependencies>
+# <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
+# <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
+
 import argparse
 import sys
 from datetime import datetime
@@ -8,6 +17,7 @@ from typing import Any, Dict, List, Optional
 
 import keyring
 import requests
+from pydantic import BaseModel
 
 self_path = Path(sys.argv[0])
 
@@ -18,24 +28,25 @@ def get_api_password() -> Optional[str]:
     return keyring.get_password("swiftbar_coffee-tracker", "Joshua Cook")
 
 
-class CoffeeBag:
+class CoffeeBag(BaseModel):
     brand: str
     name: str
     key: str
-
-    def __init__(self, brand, name, key, **info):
-        self.brand = brand
-        self.name = name
-        self.key = key
 
     def __str__(self) -> str:
         return self.brand + " - " + self.name
 
 
+class CoffeeUse(BaseModel):
+    bag_id: str
+    datetime: datetime
+    key: str
+
+
 #### ---- SwiftBar Plugin UI ---- ####
 
 
-def get_active_coffee_bags() -> List[Dict[str, Any]]:
+def get_active_coffee_bags() -> List[CoffeeBag]:
     try:
         response = requests.get(api_url + "active_bags/")
     except Exception as err:
@@ -43,7 +54,7 @@ def get_active_coffee_bags() -> List[Dict[str, Any]]:
         return []
 
     if response.status_code == 200:
-        return response.json()
+        return [CoffeeBag(**info) for info in response.json()]
     else:
         raise Exception(response.status_code)
 
@@ -55,7 +66,23 @@ def make_click_command(bag: CoffeeBag) -> str:
     cmd += "terminal=false"
     return cmd
 
-    # bash={self_path.as_posix()} param1={env} refresh=true terminal=false
+
+def get_uses_for_bag(bag_id: str) -> List[CoffeeUse]:
+    try:
+        response = requests.get(api_url + f"uses/?n_last=10&bag_id={bag_id}")
+        coffee_uses = [CoffeeUse(**info) for info in response.json()]
+        return coffee_uses
+    except Exception as err:
+        print(f"error: {err}")
+        return []
+
+
+def get_number_of_cups_today(bags: List[CoffeeBag]) -> int:
+    cups: List[CoffeeUse] = []
+    for bag in bags:
+        cups += get_uses_for_bag(bag.key)
+    cups = [cup for cup in cups if cup.datetime.date() == datetime.today().date()]
+    return len(cups)
 
 
 def swiftbar_plugin():
@@ -63,10 +90,20 @@ def swiftbar_plugin():
     print("---")
 
     coffee_bags = get_active_coffee_bags()
-    for info in coffee_bags:
-        coffee_bag = CoffeeBag(**info)
-        click_cmd = make_click_command(coffee_bag)
-        print(coffee_bag.__str__() + " | " + click_cmd)
+    for bag in coffee_bags:
+        click_cmd = make_click_command(bag)
+        print(str(bag) + " | " + click_cmd)
+
+    print("---")
+
+    n_cups = get_number_of_cups_today(bags=coffee_bags)
+    print(f"{n_cups} cups of ☕️ today")
+
+    print("---")
+
+    print("Refresh | refresh=true")
+
+    return None
 
 
 #### ---- Response to clicking a coffee ---- ####
@@ -93,24 +130,42 @@ def put_coffee_use(bag_id: str):
         print(response.json())
 
 
+#### ---- Profiling ---- ####
+
+
+def profile_plugin(n: int):
+    from statistics import mean, median, stdev
+    from time import time
+
+    timers: List[float] = []
+    for _ in range(args.profile):
+        a = time()
+        swiftbar_plugin()
+        b = time()
+        timers.append(b - a)
+    print(f"     mean: {mean(timers)}")
+    print(f"   median: {median(timers)}")
+    print(f"std. dev.: {stdev(timers)}")
+
+
 #### ---- Argument Parsing ---- ####
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("bag_id", type=str, default=None, nargs="?")
+    parser.add_argument("--profile", type=int, default=None, nargs="?")
     return parser.parse_args()
 
 
 #### ---- Main ---- ####
 
+
 if __name__ == "__main__":
     args = parse_arguments()
-    if args.bag_id is None:
-        swiftbar_plugin()
-    else:
+    if not args.bag_id is None:
         put_coffee_use(args.bag_id)
-    # Argument parsing:
-    # no arguments: the plugin is just running
-    # one argument: the coffee button that was selected
-    # Use the arguments to either run `swiftbar_plugin()` or `coffee_selected()`.
+    elif not args.profile is None:
+        profile_plugin(args.profile)
+    else:
+        swiftbar_plugin()
