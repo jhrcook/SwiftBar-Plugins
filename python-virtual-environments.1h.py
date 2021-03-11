@@ -14,20 +14,21 @@
 
 
 import subprocess
-from pathlib import Path
 import sys
+from pathlib import Path
 
 self_path = Path(sys.argv[0])
 
+
 def print_environments():
     """Print the environments to standard output."""
-    
+
     print("🅒")  # print("🐍 | emojize=true")
 
     print("---")
 
     print("Click to copy to clipboard")
-    
+
     conda_envs = subprocess.run(["conda", "env", "list"], stdout=subprocess.PIPE)
     conda_envs = conda_envs.stdout.decode("utf-8")
     conda_envs = conda_envs.split("\n")

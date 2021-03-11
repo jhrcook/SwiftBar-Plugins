@@ -1,8 +1,9 @@
 #!//Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
-from typing import Dict, Any
+from typing import Any, Dict, List
 
 import requests
+from requests.exceptions import HTTPError
 
 api_url = "https://a7a9ck.deta.dev/"
 
@@ -20,9 +21,16 @@ class CoffeeBag:
 
 
 def get_active_coffee_bags() -> List[Dict[str, Any]]:
-    response = requests.get(api_url + "active_bags/")
+    try:
+        response = requests.get(api_url + "active_bags/")
+    except Exception as err:
+        print(f"error: {err}")
+        return []
+
     if response.status_code == 200:
         return response.json()
+    else:
+        raise Exception(response.status_code)
 
 
 def swiftbar_plugin():
