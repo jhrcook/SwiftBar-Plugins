@@ -97,7 +97,8 @@ def swiftbar_plugin():
     print("---")
 
     n_cups = get_number_of_cups_today(bags=coffee_bags)
-    print(f"{n_cups} cups of ☕️ today")
+    cups_label = "cup" if n_cups == 1 else "cups"
+    print(f"{n_cups} {cups_label} of ☕️ today")
 
     print("---")
 
