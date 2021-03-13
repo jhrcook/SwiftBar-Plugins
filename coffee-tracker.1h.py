@@ -9,19 +9,30 @@
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
 
-import argparse
 import sys
 from datetime import date, datetime
+from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import keyring
 import requests
+import typer
+from click.exceptions import MissingParameter
 from pydantic import BaseModel
+from requests import status_codes
 
 self_path = Path(sys.argv[0])
 
 api_url = "https://a7a9ck.deta.dev/"
+
+app = typer.Typer()
+
+
+class CLICommands(str, Enum):
+    deactivate_bag = "deactivate_bag"
+    use_bag = "use_bag"
+    profile = "profile"
 
 
 def get_api_password() -> Optional[str]:
@@ -43,6 +54,30 @@ class CoffeeUse(BaseModel):
     key: str
 
 
+#### ---- Date and Datetime Formatting ---- ####
+
+
+def get_date_format() -> str:
+    return "%Y-%m-%d"
+
+
+def get_datetime_format() -> str:
+    return get_date_format() + "T%H:%M:%S"
+
+
+def get_today_formatted_datetime() -> str:
+    t = datetime.combine(date.today(), datetime.min.time())
+    return t.strftime(get_datetime_format())
+
+
+def get_now_formatted_datetime() -> str:
+    return datetime.now().strftime(get_datetime_format())
+
+
+def get_today_formatted_date() -> str:
+    return date.today().strftime(get_date_format())
+
+
 #### ---- SwiftBar Plugin UI ---- ####
 
 
@@ -59,18 +94,32 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
         raise Exception(response.status_code)
 
 
-def make_default_command(bag: CoffeeBag) -> str:
+def standard_command() -> str:
     cmd = "refresh=true "
     cmd += f"bash={self_path.as_posix()} "
-    cmd += f"param1='{bag.key}' "
-    cmd += "terminal=false"
+    cmd += "terminal=false "
+    return cmd
+
+
+def make_default_command(bag: CoffeeBag) -> str:
+    cmd = standard_command()
+    cmd += f"param1='{CLICommands.use_bag}' "
+    cmd += f"param2='{bag.key}' "
+    return cmd
+
+
+def make_option_command(bag: CoffeeBag) -> str:
+    cmd = standard_command()
+    cmd += "color=red alternate=true "
+    cmd += f"param1='{CLICommands.deactivate_bag}' "
+    cmd += f"param2='{bag.key}' "
     return cmd
 
 
 def get_todays_uses() -> List[CoffeeUse]:
     try:
         response = requests.get(
-            api_url + f"uses/?n_last=20&since={get_today_formatted()}"
+            api_url + f"uses/?n_last=20&since={get_today_formatted_datetime()}"
         )
         return [CoffeeUse(key=k, **i) for k, i in response.json().items()]
     except Exception as err:
@@ -80,13 +129,7 @@ def get_todays_uses() -> List[CoffeeUse]:
 
 def get_number_of_cups_today(bags: List[CoffeeBag]) -> int:
     cups: List[CoffeeUse] = get_todays_uses()
-    bag_keys = [b.key for b in bags]
-    cups = [cup for cup in cups if cup.bag_id in bag_keys]
     return len(cups)
-
-
-def make_option_command(bag: CoffeeBag) -> str:
-    return "color=red alternate=true"
 
 
 def swiftbar_plugin():
@@ -113,28 +156,16 @@ def swiftbar_plugin():
     return None
 
 
-#### ---- Response to clicking a coffee ---- ####
+#### ---- Use of a coffee ---- ####
 
 
-def get_datetime_format() -> str:
-    return "%Y-%m-%dT%H:%M:%S"
-
-
-def get_today_formatted() -> str:
-    t = datetime.combine(date.today(), datetime.min.time())
-    return t.strftime(get_datetime_format())
-
-
-def get_now_formatted() -> str:
-    return datetime.now().strftime(get_datetime_format())
-
-
+@app.command(CLICommands.use_bag)
 def put_coffee_use(bag_id: str):
     password = get_api_password()
     if password is None:
         raise Exception("Password not found.")
 
-    when = get_now_formatted()
+    when = get_now_formatted_datetime()
     url = api_url + f"new_use/{bag_id}?password={password}&when={when}"
     response = requests.put(url)
     if response.status_code == 200:
@@ -145,15 +176,36 @@ def put_coffee_use(bag_id: str):
         print(response.json())
 
 
+#### ---- Deactivate a bag ---- ####
+
+
+@app.command(CLICommands.deactivate_bag)
+def deactivate_coffee_bag(bag_id: str):
+    password = get_api_password()
+    if password is None:
+        raise Exception("Password not found.")
+
+    d = get_today_formatted_date()
+    url = api_url + f"deactivate/{bag_id}?password={password}&when={d}"
+    response = requests.patch(url)
+    if response.status_code == 200:
+        print("Successful!")
+        print(response.json())
+    else:
+        print(f"Error: status code: {response.status_code}")
+        print(response.json())
+
+
 #### ---- Profiling ---- ####
 
 
-def profile_plugin(n: int):
+@app.command(CLICommands.profile)
+def profile_plugin(n_loops: int = 10):
     from statistics import mean, median, stdev
     from time import time
 
     timers: List[float] = []
-    for _ in range(n):
+    for _ in range(n_loops):
         a = time()
         swiftbar_plugin()
         b = time()
@@ -163,28 +215,15 @@ def profile_plugin(n: int):
     print(f"std. dev.: {stdev(timers)}")
 
 
-#### ---- Argument Parsing ---- ####
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("bag_id", type=str, default=None, nargs="?")
-    parser.add_argument("--profile", type=int, default=None, nargs="?")
-    return parser.parse_args()
-
-
 #### ---- Main ---- ####
 
-
-def main():
-    args = parse_arguments()
-    if not args.bag_id is None:
-        put_coffee_use(args.bag_id)
-    elif not args.profile is None:
-        profile_plugin(args.profile)
-    else:
+# This is a bit of a workaround to get a default option without providing a command.
+# https://github.com/tiangolo/typer/issues/18#issuecomment-617089716
+@app.callback(invoke_without_command=True)
+def default(ctx: typer.Context):
+    if ctx.invoked_subcommand is None:
         swiftbar_plugin()
 
 
 if __name__ == "__main__":
-    main()
+    app()
