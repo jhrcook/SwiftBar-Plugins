@@ -59,7 +59,7 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
         raise Exception(response.status_code)
 
 
-def make_click_command(bag: CoffeeBag) -> str:
+def make_default_command(bag: CoffeeBag) -> str:
     cmd = "refresh=true "
     cmd += f"bash={self_path.as_posix()} "
     cmd += f"param1='{bag.key}' "
@@ -85,14 +85,20 @@ def get_number_of_cups_today(bags: List[CoffeeBag]) -> int:
     return len(cups)
 
 
+def make_option_command(bag: CoffeeBag) -> str:
+    return "color=red alternate=true"
+
+
 def swiftbar_plugin():
     print(":drop.fill: | sfcolor=#764636 ansi=false emojize=false symbolize=true")
     print("---")
 
     coffee_bags = get_active_coffee_bags()
     for bag in coffee_bags:
-        click_cmd = make_click_command(bag)
-        print(str(bag) + " | " + click_cmd)
+        default_cmd = make_default_command(bag)
+        option_cmd = make_option_command(bag)
+        print(str(bag) + " | " + default_cmd)
+        print("finish " + str(bag) + " | " + option_cmd)
 
     print("---")
 
@@ -147,7 +153,7 @@ def profile_plugin(n: int):
     from time import time
 
     timers: List[float] = []
-    for _ in range(args.profile):
+    for _ in range(n):
         a = time()
         swiftbar_plugin()
         b = time()
@@ -170,7 +176,7 @@ def parse_arguments():
 #### ---- Main ---- ####
 
 
-if __name__ == "__main__":
+def main():
     args = parse_arguments()
     if not args.bag_id is None:
         put_coffee_use(args.bag_id)
@@ -178,3 +184,7 @@ if __name__ == "__main__":
         profile_plugin(args.profile)
     else:
         swiftbar_plugin()
+
+
+if __name__ == "__main__":
+    main()
