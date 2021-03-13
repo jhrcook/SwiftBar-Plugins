@@ -1,10 +1,10 @@
 #!//Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
 # <bitbar.title>Coffee Tracker Plugin</bitbar.title>
-# <bitbar.version>v1.0</bitbar.version>
+# <bitbar.version>v1.0.0</bitbar.version>
 # <bitbar.author>Joshua Cook</bitbar.author>
 # <bitbar.author.github>jhrcook</bitbar.author.github>
-# <bitbar.desc>Easy logging of cups of coffee.</bitbar.desc>
+# <bitbar.desc>Logging of cups of coffee with my Coffee Tracker API.</bitbar.desc>
 # <bitbar.dependencies>python3</bitbar.dependencies>
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import keyring
-import pydantic
 import requests
 import typer
 from pydantic import BaseModel
