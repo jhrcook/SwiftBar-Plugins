@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import keyring
+import pydantic
 import requests
 import typer
 from pydantic import BaseModel
@@ -30,6 +31,7 @@ app = typer.Typer()
 class CLICommands(str, Enum):
     deactivate_bag = "deactivate_bag"
     use_bag = "use_bag"
+    new_bag = "new_bag"
     profile = "profile"
 
 
@@ -40,6 +42,8 @@ def get_api_password() -> Optional[str]:
 class CoffeeBag(BaseModel):
     brand: str
     name: str
+    weight: float
+    start: date
     key: str
 
     def __str__(self) -> str:
@@ -55,25 +59,25 @@ class CoffeeUse(BaseModel):
 #### ---- Date and Datetime Formatting ---- ####
 
 
-def get_date_format() -> str:
+def date_format() -> str:
     return "%Y-%m-%d"
 
 
-def get_datetime_format() -> str:
-    return get_date_format() + "T%H:%M:%S"
+def datetime_format() -> str:
+    return date_format() + "T%H:%M:%S"
 
 
 def get_today_formatted_datetime() -> str:
     t = datetime.combine(date.today(), datetime.min.time())
-    return t.strftime(get_datetime_format())
+    return t.strftime(datetime_format())
 
 
 def get_now_formatted_datetime() -> str:
-    return datetime.now().strftime(get_datetime_format())
+    return datetime.now().strftime(datetime_format())
 
 
 def get_today_formatted_date() -> str:
-    return date.today().strftime(get_date_format())
+    return date.today().strftime(date_format())
 
 
 #### ---- SwiftBar Plugin UI ---- ####
@@ -177,6 +181,15 @@ def put_coffee_use(bag_id: str):
 #### ---- Deactivate a bag ---- ####
 
 
+def display_response_results(res: requests.Response):
+    if res.status_code == 200:
+        print("Successful!")
+        print(res.json())
+    else:
+        print(f"Error: status code: {res.status_code}")
+        print(res.json())
+
+
 @app.command(CLICommands.deactivate_bag)
 def deactivate_coffee_bag(bag_id: str):
     password = get_api_password()
@@ -186,12 +199,37 @@ def deactivate_coffee_bag(bag_id: str):
     d = get_today_formatted_date()
     url = api_url + f"deactivate/{bag_id}?password={password}&when={d}"
     response = requests.patch(url)
-    if response.status_code == 200:
-        print("Successful!")
-        print(response.json())
-    else:
-        print(f"Error: status code: {response.status_code}")
-        print(response.json())
+    display_response_results(response)
+
+
+#### ---- New bag ---- ####
+
+
+def submit_new_bag(bag: CoffeeBag):
+    password = get_api_password()
+    if password is None:
+        raise Exception("Password not found.")
+    url = api_url + f"new_bag/?password={password}"
+    bag_data = bag.dict()
+    bag_data["start"] = bag.start.strftime(date_format())
+    _ = bag_data.pop("key", None)
+    print(bag_data)
+    response = requests.put(url, json=bag_data)
+    display_response_results(response)
+
+
+@app.command(CLICommands.new_bag)
+def new_bag(
+    brand: str = typer.Option(..., prompt="bag brand"),
+    name: str = typer.Option(..., prompt="bag name"),
+    weight: float = typer.Option(340.0, prompt="weight"),
+    start: datetime = typer.Option(
+        default=get_today_formatted_date(), prompt="starting date"
+    ),
+):
+    bag = CoffeeBag(brand=brand, name=name, weight=weight, start=start, key="stand-in")
+    submit_new_bag(bag)
+    return None
 
 
 #### ---- Profiling ---- ####
