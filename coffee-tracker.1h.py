@@ -96,10 +96,10 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
         raise Exception(response.status_code)
 
 
-def standard_command() -> str:
+def standard_command(terminal="false") -> str:
     cmd = "refresh=true "
     cmd += f"bash={self_path.as_posix()} "
-    cmd += "terminal=false "
+    cmd += f"terminal={terminal} "
     return cmd
 
 
@@ -115,6 +115,12 @@ def make_option_command(bag: CoffeeBag) -> str:
     cmd += "color=red alternate=true "
     cmd += f"param1='{CLICommands.deactivate_bag}' "
     cmd += f"param2='{bag.key}' "
+    return cmd
+
+
+def make_newbag_command() -> str:
+    cmd = standard_command(terminal="true")
+    cmd += f"param1='{CLICommands.new_bag}' "
     return cmd
 
 
@@ -144,6 +150,10 @@ def swiftbar_plugin():
         option_cmd = make_option_command(bag)
         print(str(bag) + " | " + default_cmd)
         print("finish " + str(bag) + " | " + option_cmd)
+
+    print("---")
+
+    print("Add a new bag... | " + make_newbag_command())
 
     print("---")
 
