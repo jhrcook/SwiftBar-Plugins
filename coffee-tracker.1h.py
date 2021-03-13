@@ -11,7 +11,7 @@
 
 import argparse
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -54,7 +54,7 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
         return []
 
     if response.status_code == 200:
-        return [CoffeeBag(**info) for info in response.json()]
+        return [CoffeeBag(key=k, **i) for k, i in response.json().items()]
     else:
         raise Exception(response.status_code)
 
@@ -67,21 +67,21 @@ def make_click_command(bag: CoffeeBag) -> str:
     return cmd
 
 
-def get_uses_for_bag(bag_id: str) -> List[CoffeeUse]:
+def get_todays_uses() -> List[CoffeeUse]:
     try:
-        response = requests.get(api_url + f"uses/?n_last=10&bag_id={bag_id}")
-        coffee_uses = [CoffeeUse(**info) for info in response.json()]
-        return coffee_uses
+        response = requests.get(
+            api_url + f"uses/?n_last=20&since={get_today_formatted()}"
+        )
+        return [CoffeeUse(key=k, **i) for k, i in response.json().items()]
     except Exception as err:
         print(f"error: {err}")
         return []
 
 
 def get_number_of_cups_today(bags: List[CoffeeBag]) -> int:
-    cups: List[CoffeeUse] = []
-    for bag in bags:
-        cups += get_uses_for_bag(bag.key)
-    cups = [cup for cup in cups if cup.datetime.date() == datetime.today().date()]
+    cups: List[CoffeeUse] = get_todays_uses()
+    bag_keys = [b.key for b in bags]
+    cups = [cup for cup in cups if cup.bag_id in bag_keys]
     return len(cups)
 
 
@@ -110,9 +110,17 @@ def swiftbar_plugin():
 #### ---- Response to clicking a coffee ---- ####
 
 
+def get_datetime_format() -> str:
+    return "%Y-%m-%dT%H:%M:%S"
+
+
+def get_today_formatted() -> str:
+    t = datetime.combine(date.today(), datetime.min.time())
+    return t.strftime(get_datetime_format())
+
+
 def get_now_formatted() -> str:
-    dtformat = "%Y-%m-%dT%H:%M:%S"
-    return datetime.now().strftime(dtformat)
+    return datetime.now().strftime(get_datetime_format())
 
 
 def put_coffee_use(bag_id: str):
