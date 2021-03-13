@@ -18,9 +18,7 @@ from typing import List, Optional
 import keyring
 import requests
 import typer
-from click.exceptions import MissingParameter
 from pydantic import BaseModel
-from requests import status_codes
 
 self_path = Path(sys.argv[0])
 
@@ -127,7 +125,7 @@ def get_todays_uses() -> List[CoffeeUse]:
         return []
 
 
-def get_number_of_cups_today(bags: List[CoffeeBag]) -> int:
+def get_number_of_cups_today() -> int:
     cups: List[CoffeeUse] = get_todays_uses()
     return len(cups)
 
@@ -145,7 +143,7 @@ def swiftbar_plugin():
 
     print("---")
 
-    n_cups = get_number_of_cups_today(bags=coffee_bags)
+    n_cups = get_number_of_cups_today()
     cups_label = "cup" if n_cups == 1 else "cups"
     print(f"{n_cups} {cups_label} of ☕️ today")
 
