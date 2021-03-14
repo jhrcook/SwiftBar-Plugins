@@ -9,6 +9,7 @@
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
 
+import os
 import sys
 from datetime import date, datetime
 from enum import Enum
@@ -19,6 +20,7 @@ import keyring
 import requests
 import typer
 from pydantic import BaseModel
+from typer.params import Option
 
 self_path = Path(sys.argv[0])
 
@@ -82,6 +84,22 @@ def get_now_formatted_datetime() -> str:
 
 def get_today_formatted_date() -> str:
     return date.today().strftime(date_format())
+
+
+#### ---- Notifications ---- ####
+
+
+def notify(title: str, subtitle: str, text: str) -> None:
+    cmd = f'osascript -e \'display notification "{text}" with title "{title}" subtitle "{subtitle}" \''
+    os.system(cmd)
+
+
+def notify_failed_request(res: requests.Response, subtitle: str) -> None:
+    notify(
+        title=f"Request failed ({res.status_code})",
+        subtitle=subtitle,
+        text=res.json()["detail"],
+    )
 
 
 #### ---- SwiftBar Plugin UI ---- ####
@@ -176,6 +194,19 @@ def swiftbar_plugin():
 #### ---- Use of a coffee ---- ####
 
 
+def display_response_results(
+    res: requests.Response, notify: bool = False, subtitle: Optional[str] = None
+):
+    if res.status_code == 200:
+        print("Successful!")
+        print(res.json())
+    else:
+        print(f"Error: status code: {res.status_code}")
+        print(res.json())
+        if notify and subtitle is not None:
+            notify_failed_request(res, subtitle=subtitle)
+
+
 @app.command(CLICommands.use_bag)
 def put_coffee_use(bag_id: str):
     """Submit a new coffee use to the API
@@ -193,24 +224,12 @@ def put_coffee_use(bag_id: str):
     when = get_now_formatted_datetime()
     url = api_url + f"new_use/{bag_id}?password={password}&when={when}"
     response = requests.put(url)
-    if response.status_code == 200:
-        print("Successful!")
-        print(response.json())
-    else:
-        print(f"Error: status code {response.status_code}")
-        print(response.json())
+    display_response_results(
+        response, notify=True, subtitle="Unable to put coffee use."
+    )
 
 
 #### ---- Deactivate a bag ---- ####
-
-
-def display_response_results(res: requests.Response):
-    if res.status_code == 200:
-        print("Successful!")
-        print(res.json())
-    else:
-        print(f"Error: status code: {res.status_code}")
-        print(res.json())
 
 
 @app.command(CLICommands.deactivate_bag)
@@ -230,7 +249,9 @@ def deactivate_coffee_bag(bag_id: str):
     d = get_today_formatted_date()
     url = api_url + f"deactivate/{bag_id}?password={password}&when={d}"
     response = requests.patch(url)
-    display_response_results(response)
+    display_response_results(
+        response, notify=True, subtitle="Unable to deactivate bag."
+    )
 
 
 #### ---- New bag ---- ####
@@ -246,7 +267,7 @@ def submit_new_bag(bag: CoffeeBag):
     _ = bag_data.pop("key", None)
     print(bag_data)
     response = requests.put(url, json=bag_data)
-    display_response_results(response)
+    display_response_results(response, notify=True, subtitle="Unable to add a new bag.")
 
 
 @app.command(CLICommands.new_bag)
