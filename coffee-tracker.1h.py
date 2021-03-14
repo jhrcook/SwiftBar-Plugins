@@ -35,6 +35,11 @@ class CLICommands(str, Enum):
 
 
 def get_api_password() -> Optional[str]:
+    """Get my password for the API.
+
+    Returns:
+        Optional[str]: The password, if one is found.
+    """
     return keyring.get_password("swiftbar_coffee-tracker", "Joshua Cook")
 
 
@@ -95,6 +100,22 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
         raise Exception(response.status_code)
 
 
+def get_todays_uses() -> List[CoffeeUse]:
+    try:
+        response = requests.get(
+            api_url + f"uses/?n_last=20&since={get_today_formatted_datetime()}"
+        )
+        return [CoffeeUse(key=k, **i) for k, i in response.json().items()]
+    except Exception as err:
+        print(f"error: {err}")
+        return []
+
+
+def get_number_of_cups_today() -> int:
+    cups: List[CoffeeUse] = get_todays_uses()
+    return len(cups)
+
+
 def standard_command(terminal="false") -> str:
     cmd = "refresh=true "
     cmd += f"bash={self_path.as_posix()} "
@@ -123,23 +144,8 @@ def make_newbag_command() -> str:
     return cmd
 
 
-def get_todays_uses() -> List[CoffeeUse]:
-    try:
-        response = requests.get(
-            api_url + f"uses/?n_last=20&since={get_today_formatted_datetime()}"
-        )
-        return [CoffeeUse(key=k, **i) for k, i in response.json().items()]
-    except Exception as err:
-        print(f"error: {err}")
-        return []
-
-
-def get_number_of_cups_today() -> int:
-    cups: List[CoffeeUse] = get_todays_uses()
-    return len(cups)
-
-
 def swiftbar_plugin():
+    """The default plugin to interact with the Coffee Counter API."""
     print(":drop.fill: | sfcolor=#764636 ansi=false emojize=false symbolize=true")
     print("---")
 
@@ -172,6 +178,14 @@ def swiftbar_plugin():
 
 @app.command(CLICommands.use_bag)
 def put_coffee_use(bag_id: str):
+    """Submit a new coffee use to the API
+
+    Args:
+        bag_id (str): The unique ID for the bag.
+
+    Raises:
+        Exception: Invalid password.
+    """
     password = get_api_password()
     if password is None:
         raise Exception("Password not found.")
@@ -201,6 +215,14 @@ def display_response_results(res: requests.Response):
 
 @app.command(CLICommands.deactivate_bag)
 def deactivate_coffee_bag(bag_id: str):
+    """Deactivate a bag in the data base.
+
+    Args:
+        bag_id (str): The unique ID for the bag.
+
+    Raises:
+        Exception: Invalid password.
+    """
     password = get_api_password()
     if password is None:
         raise Exception("Password not found.")
@@ -236,6 +258,19 @@ def new_bag(
         default=get_today_formatted_date(), prompt="starting date"
     ),
 ):
+    """Add a new bag to the data base
+
+    This command gets data from the user interactively if called from the CLI.
+
+    Args:
+        brand (str, optional): Brand of the bag.
+        name (str, optional): Name of the bag.
+        weight (float, optional): Weight of the bag in grams. Defaults to 340.0.
+        start (datetime, optional): When the bag was started. Defaults to today.
+
+    Returns:
+        [type]: [description]
+    """
     bag = CoffeeBag(brand=brand, name=name, weight=weight, start=start, key="stand-in")
     submit_new_bag(bag)
     return None
@@ -246,6 +281,11 @@ def new_bag(
 
 @app.command(CLICommands.profile)
 def profile_plugin(n_loops: int = 10):
+    """Profile the plugin.
+
+    Args:
+        n_loops (int, optional): Number of loops. Defaults to 10.
+    """
     from statistics import mean, median, stdev
     from time import time
 
@@ -266,6 +306,11 @@ def profile_plugin(n_loops: int = 10):
 # https://github.com/tiangolo/typer/issues/18#issuecomment-617089716
 @app.callback(invoke_without_command=True)
 def default(ctx: typer.Context):
+    """A hack to have a default command with the Typer CLI.
+
+    Args:
+        ctx (typer.Context): The context supplied by Typer.
+    """
     if ctx.invoked_subcommand is None:
         swiftbar_plugin()
 
