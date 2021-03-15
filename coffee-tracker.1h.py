@@ -195,9 +195,14 @@ def swiftbar_plugin():
 
 
 def display_response_results(
-    res: requests.Response, notify: bool = False, subtitle: Optional[str] = None
+    res: requests.Response,
+    on_fail_only=False,
+    notify: bool = False,
+    subtitle: Optional[str] = None,
 ):
     if res.status_code == 200:
+        if on_fail_only:
+            return
         print("Successful!")
         print(res.json())
     else:
@@ -267,7 +272,21 @@ def submit_new_bag(bag: CoffeeBag):
     _ = bag_data.pop("key", None)
     print(bag_data)
     response = requests.put(url, json=bag_data)
-    display_response_results(response, notify=True, subtitle="Unable to add a new bag.")
+    display_response_results(
+        response, on_fail_only=True, notify=True, subtitle="Unable to add a new bag."
+    )
+
+
+def confirm_new_bag_info(bag: CoffeeBag) -> bool:
+    head_msg = "New Coffee Bag Information:"
+    print("-" * len(head_msg))
+    print(head_msg)
+    print(f">  brand: {bag.brand}")
+    print(f">   name: {bag.name}")
+    print(f"> weight: {bag.weight}")
+    print(f">  start: {bag.start}")
+    print("-" * len(head_msg))
+    return typer.confirm("Submit bag?", default=True)
 
 
 @app.command(CLICommands.new_bag)
@@ -293,7 +312,11 @@ def new_bag(
         [type]: [description]
     """
     bag = CoffeeBag(brand=brand, name=name, weight=weight, start=start, key="stand-in")
-    submit_new_bag(bag)
+    if not confirm_new_bag_info(bag):
+        print("Bag not submitted.")
+    else:
+        submit_new_bag(bag)
+        print("New bag submitted!")
     return None
 
 
