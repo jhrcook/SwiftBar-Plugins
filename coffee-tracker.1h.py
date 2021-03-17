@@ -9,6 +9,7 @@
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
 
+import logging
 import os
 import socket
 import sys
@@ -22,6 +23,20 @@ import requests
 import typer
 from pydantic import BaseModel
 from typer.params import Option
+
+#### ---- Logging configuration ---- ####
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename=".coffee-tracer.log",
+    format="[%(levelname)s] %(asctime)s - %(funcName)s (%(lineno)d): %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+
+#### ---- API and app configuration ---- ####
+
 
 self_path = Path(sys.argv[0])
 
@@ -37,6 +52,9 @@ class CLICommands(str, Enum):
     profile = "profile"
 
 
+#### ---- Interactions with KeyChain ---- ####
+
+
 def get_api_password() -> Optional[str]:
     """Get my password for the API.
 
@@ -44,6 +62,9 @@ def get_api_password() -> Optional[str]:
         Optional[str]: The password, if one is found.
     """
     return keyring.get_password("swiftbar_coffee-tracker", "Joshua Cook")
+
+
+#### ---- Models ---- ####
 
 
 class CoffeeBag(BaseModel):
@@ -95,9 +116,11 @@ def is_connected(hostname: str = "1.1.1.1") -> bool:
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, 80), 2)
         s.close()
+        logging.info("Is connected to the internet.")
         return True
     except:
         pass
+    logging.info("Not connected to the internet.")
     return False
 
 
