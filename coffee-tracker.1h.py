@@ -15,13 +15,13 @@ import sys
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
+from urllib.parse import quote, urlencode
 
 import keyring
 import requests
 import typer
 from pydantic import BaseModel
-from typer.params import Option
 
 #### ---- API and app configuration ---- ####
 
@@ -113,8 +113,15 @@ def is_connected(hostname: str = "1.1.1.1") -> bool:
 #### ---- Notifications ---- ####
 
 
-def notify(title: str, subtitle: str, text: str) -> None:
-    cmd = f'osascript -e \'display notification "{text}" with title "{title}" subtitle "{subtitle}" \''
+def notify(title: str, subtitle: str, body: str) -> None:
+    notification: Dict[str, str] = {
+        "plugin": "coffee-tracker.1h.py",
+        "title": title,
+        "subtitle": subtitle,
+        "body": body,
+    }
+    query = urlencode(notification, quote_via=quote)  # type: ignore
+    cmd = f'open -g "swiftbar://notify?{query}"'
     os.system(cmd)
 
 
@@ -122,7 +129,7 @@ def notify_failed_request(res: requests.Response, subtitle: str) -> None:
     notify(
         title=f"Request failed ({res.status_code})",
         subtitle=subtitle,
-        text=res.json()["detail"],
+        body=res.json()["detail"],
     )
 
 
