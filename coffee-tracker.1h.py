@@ -10,6 +10,7 @@
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
 
 import os
+import socket
 import sys
 from datetime import date, datetime
 from enum import Enum
@@ -84,6 +85,20 @@ def get_now_formatted_datetime() -> str:
 
 def get_today_formatted_date() -> str:
     return date.today().strftime(date_format())
+
+
+#### ---- Network ---- ####
+
+
+def is_connected(hostname: str = "1.1.1.1") -> bool:
+    try:
+        host = socket.gethostbyname(hostname)
+        s = socket.create_connection((host, 80), 2)
+        s.close()
+        return True
+    except:
+        pass
+    return False
 
 
 #### ---- Notifications ---- ####
@@ -165,7 +180,9 @@ def make_newbag_command() -> str:
 
 def swiftbar_plugin():
     """The default plugin to interact with the Coffee Counter API."""
-    print(":drop.fill: | sfcolor=#764636 ansi=false emojize=false symbolize=true")
+    network_connection = is_connected()
+    icon = ":drop.fill:" if network_connection else ":drop:"
+    print(f"{icon} | sfcolor=#764636 ansi=false emojize=false symbolize=true")
     print("---")
 
     coffee_bags = get_active_coffee_bags()
