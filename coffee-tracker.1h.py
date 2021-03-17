@@ -118,20 +118,21 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
         raise Exception(response.status_code)
 
 
-def get_todays_uses() -> List[CoffeeUse]:
+def get_number_of_cups_today() -> int:
     try:
         response = requests.get(
-            api_url + f"uses/?n_last=20&since={get_today_formatted_datetime()}"
+            api_url + f"number_of_uses/?since={get_today_formatted_datetime()}"
         )
-        return [CoffeeUse(key=k, **i) for k, i in response.json().items()]
     except Exception as err:
-        print(f"error: {err}")
-        return []
+        print(f"Error: {err}")
+        return 0
 
-
-def get_number_of_cups_today() -> int:
-    cups: List[CoffeeUse] = get_todays_uses()
-    return len(cups)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Request error (status code: {response.status_code})")
+        print(response.json())
+        return 0
 
 
 def standard_command(terminal="false") -> str:
