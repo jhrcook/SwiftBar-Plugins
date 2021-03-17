@@ -4,12 +4,11 @@
 # <bitbar.version>v1.0.0</bitbar.version>
 # <bitbar.author>Joshua Cook</bitbar.author>
 # <bitbar.author.github>jhrcook</bitbar.author.github>
-# <bitbar.desc>Logging of cups of coffee with my Coffee Tracker API.</bitbar.desc>
+# <bitbar.desc>Recording of cups of coffee with my Coffee Tracker API.</bitbar.desc>
 # <bitbar.dependencies>python3</bitbar.dependencies>
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
 
-import logging
 import os
 import socket
 import sys
@@ -23,17 +22,6 @@ import requests
 import typer
 from pydantic import BaseModel
 from typer.params import Option
-
-#### ---- Logging configuration ---- ####
-
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename=".coffee-tracer.log",
-    format="[%(levelname)s] %(asctime)s - %(funcName)s (%(lineno)d): %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 
 #### ---- API and app configuration ---- ####
 
@@ -116,11 +104,9 @@ def is_connected(hostname: str = "1.1.1.1") -> bool:
         host = socket.gethostbyname(hostname)
         s = socket.create_connection((host, 80), 2)
         s.close()
-        logging.info("Is connected to the internet.")
         return True
     except:
         pass
-    logging.info("Not connected to the internet.")
     return False
 
 
@@ -147,7 +133,6 @@ def get_active_coffee_bags() -> List[CoffeeBag]:
     try:
         response = requests.get(api_url + "active_bags/")
     except Exception as err:
-        print(f"error: {err}")
         return []
 
     if response.status_code == 200:
@@ -162,14 +147,11 @@ def get_number_of_cups_today() -> int:
             api_url + f"number_of_uses/?since={get_today_formatted_datetime()}"
         )
     except Exception as err:
-        print(f"Error: {err}")
         return 0
 
     if response.status_code == 200:
         return response.json()
     else:
-        print(f"Request error (status code: {response.status_code})")
-        print(response.json())
         return 0
 
 
