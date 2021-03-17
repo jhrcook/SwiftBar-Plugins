@@ -188,24 +188,28 @@ def swiftbar_plugin():
     network_connection = is_connected()
     icon = ":drop.fill:" if network_connection else ":drop:"
     print(f"{icon} | sfcolor=#764636 ansi=false emojize=false symbolize=true")
-    print("---")
-
-    coffee_bags = get_active_coffee_bags()
-    for bag in coffee_bags:
-        default_cmd = make_default_command(bag)
-        option_cmd = make_option_command(bag)
-        print(str(bag) + " | " + default_cmd)
-        print("finish " + str(bag) + " | " + option_cmd)
 
     print("---")
 
-    print("Add a new bag... | " + make_newbag_command())
+    if network_connection:
+        coffee_bags = get_active_coffee_bags()
+        for bag in coffee_bags:
+            default_cmd = make_default_command(bag)
+            option_cmd = make_option_command(bag)
+            print(str(bag) + " | " + default_cmd)
+            print("finish " + str(bag) + " | " + option_cmd)
 
-    print("---")
+        print("---")
 
-    n_cups = get_number_of_cups_today()
-    cups_label = "cup" if n_cups == 1 else "cups"
-    print(f"{n_cups} {cups_label} of ☕️ today")
+        print("Add a new bag... | " + make_newbag_command())
+
+        print("---")
+
+        n_cups = get_number_of_cups_today()
+        cups_label = "cup" if n_cups == 1 else "cups"
+        print(f"{n_cups} {cups_label} of ☕️ today")
+    else:
+        print("No network connection.")
 
     print("---")
 
