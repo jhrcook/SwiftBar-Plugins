@@ -1,4 +1,4 @@
-#!//Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
+#!/Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
 # <bitbar.title>Coffee Tracker Plugin</bitbar.title>
 # <bitbar.version>v1.0.0</bitbar.version>
@@ -15,7 +15,7 @@ import sys
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 from urllib.parse import quote, urlencode
 
 import keyring
@@ -114,7 +114,7 @@ def is_connected(hostname: str = "1.1.1.1") -> bool:
 
 
 def notify(title: str, subtitle: str, body: str) -> None:
-    notification: Dict[str, str] = {
+    notification: dict[str, str] = {
         "plugin": "coffee-tracker.1h.py",
         "title": title,
         "subtitle": subtitle,
@@ -136,7 +136,7 @@ def notify_failed_request(res: requests.Response, subtitle: str) -> None:
 #### ---- SwiftBar Plugin UI ---- ####
 
 
-def get_active_coffee_bags() -> List[CoffeeBag]:
+def get_active_coffee_bags() -> list[CoffeeBag]:
     try:
         response = requests.get(api_url + "active_bags/")
     except Exception as err:
@@ -190,21 +190,38 @@ def make_newbag_command() -> str:
     return cmd
 
 
+ICON_BROWN: str = "#764636"
+
+
+def get_icon(network_is_connected: bool, num_bags: int) -> tuple[str, str]:
+    if not network_is_connected:
+        return ":drop:", ICON_BROWN
+    if num_bags < 1:
+        return ":drop.triangle:", "red"
+    return ":drop.fill:", ICON_BROWN
+
+
 def swiftbar_plugin():
     """The default plugin to interact with the Coffee Counter API."""
     network_connection = is_connected()
-    icon = ":drop.fill:" if network_connection else ":drop:"
-    print(f"{icon} | sfcolor=#764636 ansi=false emojize=false symbolize=true")
+    coffee_bags: list[CoffeeBag] = (
+        get_active_coffee_bags() if network_connection else []
+    )
+
+    icon, icon_color = get_icon(network_connection, num_bags=len(coffee_bags))
+    print(f"{icon} | sfcolor={icon_color} ansi=false emojize=false symbolize=true")
 
     print("---")
 
     if network_connection:
-        coffee_bags = get_active_coffee_bags()
-        for bag in coffee_bags:
-            default_cmd = make_default_command(bag)
-            option_cmd = make_option_command(bag)
-            print(str(bag) + " | " + default_cmd)
-            print("finish " + str(bag) + " | " + option_cmd)
+        if len(coffee_bags) == 0:
+            print("No bags available 😦")
+        else:
+            for bag in coffee_bags:
+                default_cmd = make_default_command(bag)
+                option_cmd = make_option_command(bag)
+                print(str(bag) + " | " + default_cmd)
+                print("finish " + str(bag) + " | " + option_cmd)
 
         print("---")
 
@@ -367,7 +384,7 @@ def profile_plugin(n_loops: int = 10):
     from statistics import mean, median, stdev
     from time import time
 
-    timers: List[float] = []
+    timers: list[float] = []
     for _ in range(n_loops):
         a = time()
         swiftbar_plugin()
