@@ -28,7 +28,7 @@ from pydantic import BaseModel
 
 self_path = Path(sys.argv[0])
 
-api_url = "https://a7a9ck.deta.dev/"
+api_url = "https://coffee-counter.deta.dev/"
 
 app = typer.Typer()
 
