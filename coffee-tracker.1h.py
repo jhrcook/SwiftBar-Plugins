@@ -238,6 +238,7 @@ def swiftbar_plugin():
     print("---")
 
     print("Refresh | refresh=true")
+    print(f"Open online docs | href={api_url}docs")
 
     return None
 
