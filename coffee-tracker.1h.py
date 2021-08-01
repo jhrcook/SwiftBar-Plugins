@@ -239,6 +239,9 @@ def swiftbar_plugin():
 
     print("Refresh | refresh=true")
     print(f"Open online docs | href={api_url}docs")
+    print(
+        f"Streamlit app | href=https://share.streamlit.io/jhrcook/coffee-counter-streamlit/app.py"
+    )
 
     return None
 
