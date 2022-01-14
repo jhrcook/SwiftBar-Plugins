@@ -325,7 +325,6 @@ def submit_new_bag(bag: CoffeeBag):
     bag_data = bag.dict()
     bag_data["start"] = bag.start.strftime(date_format())
     _ = bag_data.pop("key", None)
-    print(bag_data)
     response = requests.put(url, json=bag_data)
     display_response_results(
         response, on_fail_only=True, notify=True, subtitle="Unable to add a new bag."
