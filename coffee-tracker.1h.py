@@ -29,7 +29,7 @@ from pydantic import BaseModel
 self_path = Path(sys.argv[0])
 
 api_url = "https://coffee-counter.deta.dev/"
-
+streamlit_url = "https://share.streamlit.io/jhrcook/coffee-counter-streamlit/app.py"
 app = typer.Typer()
 
 
@@ -105,7 +105,7 @@ def is_connected(hostname: str = "1.1.1.1") -> bool:
         s = socket.create_connection((host, 80), 2)
         s.close()
         return True
-    except:
+    except BaseException:
         pass
     return False
 
@@ -139,13 +139,13 @@ def notify_failed_request(res: requests.Response, subtitle: str) -> None:
 def get_active_coffee_bags() -> list[CoffeeBag]:
     try:
         response = requests.get(api_url + "active_bags/")
-    except Exception as err:
+    except BaseException:
         return []
 
     if response.status_code == 200:
         return [CoffeeBag(key=k, **i) for k, i in response.json().items()]
     else:
-        raise Exception(response.status_code)
+        raise BaseException(response.status_code)
 
 
 def get_number_of_cups_today() -> int:
@@ -153,7 +153,7 @@ def get_number_of_cups_today() -> int:
         response = requests.get(
             api_url + f"number_of_uses/?since={get_today_formatted_datetime()}"
         )
-    except Exception as err:
+    except BaseException:
         return 0
 
     if response.status_code == 200:
@@ -239,9 +239,7 @@ def swiftbar_plugin():
 
     print("Refresh | refresh=true")
     print(f"Open online docs | href={api_url}docs")
-    print(
-        f"Streamlit app | href=https://share.streamlit.io/jhrcook/coffee-counter-streamlit/app.py"
-    )
+    print(f"Streamlit app | href={streamlit_url}")
 
     return None
 
