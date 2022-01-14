@@ -1,5 +1,7 @@
 #!/Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
+"""Easy access to oft copied text."""
+
 # <bitbar.title>Oft Copied Text</bitbar.title>
 # <bitbar.version>v1.0.0</bitbar.version>
 # <bitbar.author>Joshua Cook</bitbar.author>
@@ -67,11 +69,20 @@ def _refresh() -> None:
     return None
 
 
+def _edit() -> None:
+    out = ":pencil.tip.crop.circle: Edit... | symbolize=true"
+    out += f" bash='mate' param0='{str(plugin_path)}'"
+    out += " refresh=true terminal=false"
+    print(out)
+    return None
+
+
 def swiftbar_app() -> None:
     """Print to standard out the data for the SwiftBar application."""
     _header()
     _copyables()
     _refresh()
+    _edit()
     return None
 
 
