@@ -86,9 +86,11 @@ def copy_text(title: str) -> None:
     """
     text = COPY_TEXT_INFO[title]
     p1 = subprocess.Popen(["echo", text], stdout=subprocess.PIPE)
-    _ = subprocess.Popen(["pbcopy"], stdin=p1.stdout)
+    p2 = subprocess.Popen(["pbcopy"], stdin=p1.stdout)
     if p1.stdout is not None:
         p1.stdout.close()
+    if p2.stdin is not None:
+        p2.stdin.close()
     return None
 
 
