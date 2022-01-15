@@ -1,10 +1,12 @@
 #!/Users/admin/Documents/SwiftBar-Plugins/.env/bin/python3
 
+"""Recording coffee consumption with my Coffee Tracker API."""
+
 # <bitbar.title>Coffee Tracker Plugin</bitbar.title>
 # <bitbar.version>v1.0.0</bitbar.version>
 # <bitbar.author>Joshua Cook</bitbar.author>
 # <bitbar.author.github>jhrcook</bitbar.author.github>
-# <bitbar.desc>Recording of cups of coffee with my Coffee Tracker API.</bitbar.desc>
+# <bitbar.desc>Recording coffee consumption with my Coffee Tracker API.</bitbar.desc>
 # <bitbar.dependencies>python3</bitbar.dependencies>
 # <swiftbar.hideRunInTerminal>true</swiftbar.hideRunInTerminal>
 # <swiftbar.hideSwiftBar>true</swiftbar.hideSwiftBar>
@@ -300,6 +302,12 @@ def get_icon(network_is_connected: bool, num_bags: int) -> tuple[str, str]:
 
 
 def display_menu_bar_icon(network_is_connected: bool, num_bags: int) -> None:
+    """Display the primary menubar app icon.
+
+    Args:
+        network_is_connected (bool): Is there a network connection?
+        num_bags (int): Number of coffee bags available.
+    """
     icon, icon_color = get_icon(network_is_connected, num_bags)
     print(f"{icon} | sfcolor={icon_color} ansi=false emojize=false symbolize=true")
     print("---")
@@ -333,6 +341,11 @@ def display_open_streamlit_app() -> None:
 
 
 def display_coffee_bag_choices(coffee_bags: list[CoffeeBag]) -> None:
+    """Display the coffee bag choices in the SwiftBar dropdown menu.
+
+    Args:
+        coffee_bags (list[CoffeeBag]): Coffee bags.
+    """
     for bag in coffee_bags:
         default_cmd = make_default_command(bag)
         option_cmd = make_option_command(bag)
@@ -342,6 +355,7 @@ def display_coffee_bag_choices(coffee_bags: list[CoffeeBag]) -> None:
 
 
 def display_no_coffee_bags_message() -> None:
+    """Display that no bags of coffee are available (sad)."""
     print("No bags available 😦")
     return None
 
@@ -360,8 +374,8 @@ def swiftbar_plugin():
             display_no_coffee_bags_message()
         else:
             display_coffee_bag_choices(coffee_bags)
-        display_add_new_bag()
         display_number_of_cups()
+        display_add_new_bag()
     else:
         print("No network connection.")
     print("---")
@@ -379,7 +393,17 @@ def display_response_results(
     on_fail_only=False,
     notify: bool = False,
     subtitle: Optional[str] = None,
-):
+) -> None:
+    """Display the results of a request made to the API.
+
+    Args:
+        res (requests.Response): HTTP response.
+        on_fail_only (bool, optional): Only show the results if there is a failure.
+        Defaults to False.
+        notify (bool, optional): Should a notification be shown? Defaults to False.
+        subtitle (Optional[str], optional): Subtitle for the notification. Required if
+        `notify=True`. Defaults to None.
+    """
     if res.status_code == 200:
         if on_fail_only:
             return
@@ -390,10 +414,11 @@ def display_response_results(
         print(res.json())
         if notify and subtitle is not None:
             notify_failed_request(res, subtitle=subtitle)
+    return None
 
 
 @app.command(CLICommands.use_bag)
-def put_coffee_use(bag_id: str):
+def put_coffee_use(bag_id: str) -> None:
     """Submit a new coffee use to the API.
 
     Args:
@@ -412,13 +437,14 @@ def put_coffee_use(bag_id: str):
     display_response_results(
         response, notify=True, subtitle="Unable to put coffee use."
     )
+    return None
 
 
 # --- Deactivate a bag ---
 
 
 @app.command(CLICommands.deactivate_bag)
-def deactivate_coffee_bag(bag_id: str):
+def deactivate_coffee_bag(bag_id: str) -> None:
     """Deactivate a bag in the data base.
 
     Args:
@@ -437,15 +463,26 @@ def deactivate_coffee_bag(bag_id: str):
     display_response_results(
         response, notify=True, subtitle="Unable to deactivate bag."
     )
+    return None
 
 
 # --- New bag ---
 
 
-def submit_new_bag(bag: CoffeeBag):
+def submit_new_bag(bag: CoffeeBag) -> None:
+    """Submit the information for a new bag of coffee to the API.
+
+    TODO: Make a custom error class instead of using BaseException.
+
+    Args:
+        bag (CoffeeBag): Bag of coffee to add.
+
+    Raises:
+        BaseException: If there is no password available for the API.
+    """
     password = get_api_password()
     if password is None:
-        raise Exception("Password not found.")
+        raise BaseException("Password not found.")
     url = api_url + f"new_bag/?password={password}"
     bag_data = bag.dict()
     bag_data["start"] = bag.start.strftime(date_format())
@@ -454,9 +491,18 @@ def submit_new_bag(bag: CoffeeBag):
     display_response_results(
         response, on_fail_only=True, notify=True, subtitle="Unable to add a new bag."
     )
+    return None
 
 
 def confirm_new_bag_info(bag: CoffeeBag) -> bool:
+    """Display the information for a coffee bag for final confirmation.
+
+    Args:
+        bag (CoffeeBag): Bag of coffee.
+
+    Returns:
+        bool: Whether or not the information was confirmed.
+    """
     head_msg = "New Coffee Bag Information:"
     print("-" * len(head_msg))
     print(head_msg)
@@ -476,7 +522,7 @@ def new_bag(
     start: datetime = typer.Option(
         default=get_today_formatted_date(), prompt="starting date"
     ),
-):
+) -> None:
     """Add a new bag to the data base.
 
     This command gets data from the user interactively if called from the CLI.
@@ -503,7 +549,7 @@ def new_bag(
 
 
 @app.command(CLICommands.profile)
-def profile_plugin(n_loops: int = 10):
+def profile_plugin(n_loops: int = 10) -> None:
     """Profile the plugin.
 
     Args:
@@ -521,6 +567,7 @@ def profile_plugin(n_loops: int = 10):
     print(f"     mean: {mean(timers)}")
     print(f"   median: {median(timers)}")
     print(f"std. dev.: {stdev(timers)}")
+    return None
 
 
 # --- Main ---
@@ -528,7 +575,7 @@ def profile_plugin(n_loops: int = 10):
 # This is a bit of a workaround to get a default option without providing a command.
 # https://github.com/tiangolo/typer/issues/18#issuecomment-617089716
 @app.callback(invoke_without_command=True)
-def default(ctx: typer.Context):
+def default(ctx: typer.Context) -> None:
     """A hack to have a default command with the Typer CLI.
 
     Args:
@@ -536,6 +583,7 @@ def default(ctx: typer.Context):
     """
     if ctx.invoked_subcommand is None:
         swiftbar_plugin()
+    return None
 
 
 if __name__ == "__main__":
