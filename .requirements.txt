@@ -13,6 +13,7 @@ pathspec
 pydantic
 regex
 requests
+taskw
 toml
 typed-ast
 typer
