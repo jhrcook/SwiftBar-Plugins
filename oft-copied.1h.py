@@ -34,7 +34,9 @@ else:
 
 
 COPY_TEXT_INFO: Final[dict[str, str]] = {
-    "IPython autoreload": "%load_ext autoreload\n%autoreload 2"
+    "IPython autoreload": "%load_ext autoreload\n%autoreload 2",
+    "Pystan in Jupyter": "import nest_asyncio\nnest_asyncio.apply()",
+    "matplotlib retina": "%matplotlib inline\n%config InlineBackend.figure_format='retina'",  # noqa: E501
 }
 
 

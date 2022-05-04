@@ -36,6 +36,7 @@ FILE = str(Path(__file__))
 PROJECT_NAMES: Final[dict[str, str]] = {
     "speclet": ":laptopcomputer: speclet",
     "bluishred": ":laptopcomputer: bluishred",
+    "blauks": ":laptopcomputer: blauks",
     "katsaros": ":laptopcomputer: katsaros",
     "home": ":house.fill: home",
     "lab": ":briefcase: lab",
@@ -127,10 +128,9 @@ class CLIArguments(BaseModel):
 
 def menu_bar_icon() -> None:
     """Print SwiftBar menu icon."""
-    icon = ":list.bullet.circle:"
-    color = "purple"
+    icon = "list.number"
     extras = "dropdown=False tooltip='TextWarrior'"
-    print(f"{icon} | symbolize=True sfcolor={color} {extras}")
+    print(f":{icon}: | symbolize=True {extras}")
     print("---")
 
 
