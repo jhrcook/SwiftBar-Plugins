@@ -37,6 +37,10 @@ COPY_TEXT_INFO: Final[dict[str, str]] = {
     "IPython autoreload": "%load_ext autoreload\n%autoreload 2",
     "Pystan in Jupyter": "import nest_asyncio\nnest_asyncio.apply()",
     "matplotlib retina": "%matplotlib inline\n%config InlineBackend.figure_format='retina'",  # noqa: E501
+    "ipynb watermark": "%load_ext watermark\n%watermark -d -u -v -iv -b -h -m",  # noqa: E501
+    "Python shebang": "#!/usr/bin/env python3",
+    "R shebang": "#!/usr/bin/env Rscript",
+    "ORCID": "0000-0001-9815-6879",
 }
 
 
